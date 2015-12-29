@@ -85,7 +85,7 @@ public class DisplayImagesActivity
 
         // Retrieve the file path to the directory containing the
         // images to display from the intent.
-        mFilePath = getIntent().getData().getPath();
+        mFilePath = getIntent().getDataString();
 
         // Find the directory and load the directory as the source of
         // the imageAdapter.
@@ -110,12 +110,8 @@ public class DisplayImagesActivity
      */
     public static Intent makeIntent(Uri directoryPathname) {
         return new Intent(ACTION_DISPLAY_IMAGES)
-                .setDataAndType(
-                        Uri.parse(directoryPathname.getPath())
-                                .buildUpon()
-                                .scheme("file")
-                                .build(),
-                        "image/*");
+            .setDataAndType(directoryPathname,
+                            "image/*");
     }
 
     /**

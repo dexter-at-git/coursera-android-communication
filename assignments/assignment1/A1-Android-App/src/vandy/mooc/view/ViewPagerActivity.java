@@ -93,19 +93,15 @@ public class ViewPagerActivity extends FragmentActivity {
      * 
      * @param directoryPathname
      *            Filepath storing images to display
-     * @param position
+     * @param pos
      *            Position of starting image
      * @return
      */
     public static Intent makeIntent(String directoryPathname,
                                     int position) {
         return new Intent(ACTION_DISPLAY_IMAGES_SWIPE)
-                .setDataAndType(
-                        Uri.parse(directoryPathname)
-                                .buildUpon()
-                                .scheme("file")
-                                .build(),
-                        "image/*")
+            .setDataAndType(Uri.parse(directoryPathname),
+                            "image/*")
             .putExtra(ViewPagerActivity.CURRENT_IMAGE_POSITION, 
                       position);
     }
@@ -124,15 +120,15 @@ public class ViewPagerActivity extends FragmentActivity {
               + intent);
         Log.v(TAG,
               "2" 
-              + intent.getData());
+              + intent.getDataString());
 
         // If the intent exists and contains the filepath, extract its
         // data
-        if (intent != null && intent.getData() != null) {
+        if (intent != null && intent.getDataString() != null) {
             mCurrentImage =
                 intent.getIntExtra(CURRENT_IMAGE_POSITION,
                                    0);
-            mFilePath = intent.getData().getPath();
+            mFilePath = intent.getDataString();
         }
         Log.v(TAG,
               "mFilePath" 
