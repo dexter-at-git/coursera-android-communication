@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import vandy.mooc.common.Utils;
 import vandy.mooc.model.aidl.WeatherData;
 import vandy.mooc.model.aidl.WeatherRequest;
 import vandy.mooc.model.aidl.WeatherResults;
@@ -47,7 +48,8 @@ public class WeatherServiceAsync
      *            The context of the calling component.
      */
     public static Intent makeIntent(Context context) {
-        // TODO -- you fill in here.
+        // TODO +- you fill in here.
+        return new Intent(context, WeatherServiceAsync.class);
     }
     
     /**
@@ -108,7 +110,56 @@ public class WeatherServiceAsync
             @Override
             public void getCurrentWeather(final String location,
                                           final WeatherResults callback) {
-                // TODO -- you fill in here.
+                // TODO +- you fill in here.
+                final Runnable getCurrentWeatherRunnable = new Runnable() {
+                    public void run() {
+                        try {
+                            // Call the Weather Web service to get the
+                            // list of weather results.
+                            final List<WeatherData> weatherResults =
+                            		getWeatherResults(location);
+
+                            if (weatherResults != null) {
+                                Log.d(TAG, weatherResults 
+                                      + " result(s) for location: "
+                                      + location);
+                                // Invoke a one-way callback to send
+                                // list of Weather results back to
+                                // the client.
+                                callback.sendResults(weatherResults.get(0));
+                            } else {
+                                Log.d(TAG, 
+                                      "No weather for \""
+                                      + location
+                                      + "\" found");
+
+                                // Invoke a one-way callback to send
+                                // an error message back to the
+                                // client.es
+                                callback.sendError("No weather for \""
+                                                   + location
+                                                   + "\" found");
+                            }
+                        } catch (Exception e) {
+                            Log.d(TAG,
+                                  "getCurrentWeather() "
+                                  + e);
+                        }
+                    }
+
+                };
+
+                // Determine if we're on the UI thread or not.  
+                if (Utils.runningOnUiThread())
+                    // Execute getCurrentWeatherRunnable in a separate
+                    // thread if this service has been configured to
+                    // be collocated with an Activity.
+                    mExecutorService.execute(getCurrentWeatherRunnable);
+                else 
+                    // Run the getCurrentWeatherRunnable in the pool
+                    // thread if this service has been configured to
+                    // run in its own process.
+                	getCurrentWeatherRunnable.run();            
             }
         };
 }

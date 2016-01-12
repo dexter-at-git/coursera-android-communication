@@ -23,9 +23,9 @@ import android.util.Log;
 public class WeatherServiceBase 
        extends LifecycleLoggingService {
     /**
-     * Appid needed to access the service.  TODO -- fill in with your Appid.
+     * Appid needed to access the service.  TODO +- fill in with your Appid.
      */
-    private final String mAppid = "";
+    private final String mAppid = "3e5aa334b52ef915b66963edb46ef42c";
 
     /**
      * URL to the Weather Service web service.
@@ -58,7 +58,10 @@ public class WeatherServiceBase
     public void onCreate() {
         super.onCreate();
 
-        // TODO -- you fill in here.
+        // TODO +- you fill in here.
+        // Increment the reference count for the WeatherCache
+        // singleton, which is shared by both Services.
+        GenericSingleton.instance(WeatherCache.class).incrementRefCount();
     }
 
     /**
@@ -69,7 +72,13 @@ public class WeatherServiceBase
     public void onDestroy() {
         super.onDestroy();
 
-        // TODO -- you fill in here.
+        // TODO +- you fill in here.
+        // Decrement the reference count for the WeatherCache
+        // singleton, which shuts it down when the count drops to 0.
+        // When this happens, the GenericSingleton needs to remove the
+        // WeatherCache.class entry in its map.
+        if (GenericSingleton.instance(WeatherCache.class).decrementRefCount() == 0)
+            GenericSingleton.remove(WeatherCache.class);
     }
 
     /**
@@ -83,8 +92,41 @@ public class WeatherServiceBase
               "Looking up results in the cache for "
               + location);
 
-        // TODO -- you fill in here.
-        }
+        // TODO +- you fill in here.
+        Log.d(TAG,
+                "Looking up results in the cache for "
+                + location);
+
+          // Try to get the results from the WeatherCache.
+          List<WeatherData> results =
+              GenericSingleton.instance(WeatherCache.class).get(location);
+
+          if (results != null) {
+              Log.d(TAG,
+                    "Getting results from the cache for "
+                    + location);
+             
+              // Return the results from the cache.
+              return results;
+          } else {
+              Log.d(TAG,
+                    "Getting results from the Weather Service for "
+                    + location);
+
+              // The results weren't already in the cache or were
+              // "stale", so obtain them from the Weather Service.
+              results = getResultsFromWeatherService(location);
+
+              if (results != null)
+                  // Store the results into the cache for up to
+                  // DEFAULT_CACHE_TIMEOUT seconds based on the location
+                  // and return the results.
+                  GenericSingleton.instance(WeatherCache.class).put
+                      (location,
+                       results,
+                       DEFAULT_CACHE_TIMEOUT);
+              return results;
+          }        
     }
 
     /**

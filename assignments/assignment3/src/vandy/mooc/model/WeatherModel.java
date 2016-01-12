@@ -41,9 +41,20 @@ public class WeatherModel
      */
     private String mLocation;
 
-    // TODO -- define ServiceConnetions to connect to the
+    // TODO +- define ServiceConnetions to connect to the
     // WeatherServiceSync and WeatherServiceAsync.
+    /**
+     * This GenericServiceConnection is used to receive results after
+     * binding to the WeatherServiceSync Service using bindService().
+     */
+    private GenericServiceConnection<WeatherCall> mServiceConnectionSync;
 
+    /**
+     * This GenericServiceConnection is used to receive results after
+     * binding to the WeatherServiceAsync Service using bindService().
+     */
+    private GenericServiceConnection<WeatherRequest> mServiceConnectionAsync;
+    
     /**
      * Hook method called when a new WeatherModel instance is created
      * to initialize the ServicConnections and bind to the WeatherService*.
@@ -56,7 +67,12 @@ public class WeatherModel
         // Set the WeakReference.
         mPresenter = new WeakReference<>(presenter);
 
-        // TODO -- you fill in here to initialize the WeatherService*.
+        // TODO +- you fill in here to initialize the WeatherService*.
+        // Initialize the GenericServiceConnection objects.
+        mServiceConnectionSync = 
+            new GenericServiceConnection<WeatherCall>(WeatherCall.class);
+        mServiceConnectionAsync =
+            new GenericServiceConnection<WeatherRequest>(WeatherRequest.class);
 
         // Bind to the services.
         bindService();
@@ -96,7 +112,8 @@ public class WeatherModel
                 throws RemoteException {
                 // Pass the results back to the Presenter's
                 // displayResults() method.
-                // TODO -- you fill in here.
+                // TODO +- you fill in here.
+            	mPresenter.get().displayResults(weatherResults, "");
             }
 
             /**
@@ -108,7 +125,8 @@ public class WeatherModel
                 throws RemoteException {
                 // Pass the results back to the Presenter's
                 // displayResults() method.
-                // TODO -- you fill in here.
+                // TODO +- you fill in here.
+            	mPresenter.get().displayResults(null, reason);
             }
 	};
 
@@ -124,7 +142,30 @@ public class WeatherModel
         // activity to the WeatherService* if they aren't already
         // bound.
 
-        // TODO -- you fill in here.
+        // TODO +- you fill in here.
+        Log.d(TAG,
+                "calling bindService()");
+
+          // Launch the Acronym Bound Services if they aren't already
+          // running via a call to bindService(), which binds this
+          // activity to the AcronymService* if they aren't already
+          // bound.
+          if (mServiceConnectionSync.getInterface() == null) 
+              mPresenter.get().getApplicationContext()
+                               .bindService
+                  (WeatherServiceSync.makeIntent
+                       (mPresenter.get()
+                                         .getActivityContext()),
+                   mServiceConnectionSync,
+                   Context.BIND_AUTO_CREATE);
+
+          if (mServiceConnectionAsync.getInterface() == null) 
+        	  mPresenter.get().getApplicationContext()
+                               .bindService
+                  (WeatherServiceAsync.makeIntent
+                       (mPresenter.get().getActivityContext()),
+                   mServiceConnectionAsync,
+                   Context.BIND_AUTO_CREATE);
     }
 
     /**
@@ -134,14 +175,49 @@ public class WeatherModel
         Log.d(TAG,
               "calling unbindService()");
 
-        // TODO -- you fill in here to unbind from the WeatherService*.
+        // TODO +- you fill in here to unbind from the WeatherService*.
+          // Unbind the Async Service if it is connected.
+          if (mServiceConnectionAsync.getInterface() != null)
+              mPresenter.get()
+                  .getApplicationContext()
+                  .unbindService
+                  (mServiceConnectionAsync);
+
+          // Unbind the Sync Service if it is connected.
+          if (mServiceConnectionSync.getInterface() != null)
+        	  mPresenter.get()
+                  .getApplicationContext()
+                  .unbindService
+                  (mServiceConnectionSync);
     }
 
     /**
      * Initiate the asynchronous weather lookup.
      */
     public boolean getWeatherAsync(String location) {
-        // TODO -- you fill in here.
+        // TODO +- you fill in here.
+        // Get a reference to the WeatherRequest interface.
+        final WeatherRequest weatherRequest = 
+            mServiceConnectionAsync.getInterface();
+
+        if (weatherRequest != null) {
+            try {
+                // Invoke a one-way AIDL call that doesn't block the
+                // caller.  Results are returned via the sendResults()
+                // or sendError() methods of the AsyncResultsImpl
+                // callback object, which runs in a Thread from the
+                // Thread pool managed by the Binder framework.
+            	weatherRequest.getCurrentWeather(location, mWeatherResults);
+            	return true;
+            } catch (RemoteException e) {
+                Log.e(TAG,
+                      "RemoteException:" 
+                      + e.getMessage());
+            }
+        } else 
+            Log.d(TAG,
+                  "weatherRequest was null.");
+        return false;
 
     }
 
@@ -149,6 +225,20 @@ public class WeatherModel
      * Initiate the synchronous weather lookup.
      */
     public WeatherData getWeatherSync(String location) {
-        // TODO -- you fill in here.
+        // TODO +- you fill in here.
+        try {
+            final WeatherCall weatherCall = 
+                mServiceConnectionSync.getInterface();
+
+            if (weatherCall != null) 
+                // Invoke a two-way AIDL call, which blocks the
+                // caller.
+                return weatherCall.getCurrentWeather(location).get(0);
+            else 
+                Log.d(TAG, "mWeatherCall was null.");
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

@@ -36,7 +36,8 @@ public class WeatherServiceSync
      *            The context of the calling component.
      */
     public static Intent makeIntent(Context context) {
-        // TODO -- you fill in here.
+        // TODO +- you fill in here.
+        return new Intent(context, WeatherServiceSync.class);
     }
 
     /**
@@ -70,6 +71,26 @@ public class WeatherServiceSync
             public List<WeatherData> getCurrentWeather(String location)
                 throws RemoteException {
 
-                // TODO -- you fill in here.
+                // TODO +- you fill in here.
+                // Call the Weather Web service to get the list of
+                // possible expansions of the designated acronym.
+                final List<WeatherData> weatherResults = 
+                    getWeatherResults(location);
+
+                if (weatherResults != null) {
+                    Log.d(TAG, "" 
+                          + weatherResults
+                          + " results for location: " 
+                          + location);
+
+                    // Return the list of weather results back to
+                    // the WeatherModel.
+                    return weatherResults;
+                } else 
+                    // Create a zero-sized weatherResults object to
+                    // indicate to the caller that the weather had no
+                    // data.
+                    return new ArrayList<WeatherData>();
+            }
         };
 }
